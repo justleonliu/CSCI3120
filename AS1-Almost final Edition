@@ -1,0 +1,172 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <stddef.h>
+#include <stdlib.h>
+
+#define MAX_LINE 80
+#define MIN_Process 1
+#define MAX_Process 10
+#define NOT_Process 0
+
+
+typedef struct
+{
+    pid_t pid;
+    char userInput[MAX_LINE + 1];
+} 
+    record;
+
+void free_args(char **args, unsigned aargs)
+{
+    unsigned i;
+    for (i = 0; i < aargs; i++)
+        free(args[i]);
+}
+
+int parse_userInput(char *userInput, char *buf, char **args, unsigned aargs, unsigned max_aargs)
+{
+    char *token;
+    unsigned len;
+    unsigned i;
+    free_args(args, aargs);
+    aargs = 0;
+    for (i = 0; i < max_aargs; i++)
+        args[i] = NULL;
+
+    len = strlen(userInput);
+    if (len > 0 && userInput[len - 1] == '\n')
+        userInput[--len] = '\0';
+
+    strcpy(buf, userInput);
+    token = strtok(buf, " ");
+
+    if (!token) {
+        args[aargs] = strdup(buf);
+        return ++aargs;
+    }
+
+    while (token && aargs + 1 < max_aargs) {
+        args[aargs] = strdup(token);
+        aargs++;
+        token = strtok(NULL, " ");
+    }
+    if (token) {
+        free_args(args, aargs);
+        return 0;
+    }
+    return aargs;
+}
+
+int parse_number(const char *str, char *buf, int *num)
+{
+    if (sscanf(str, "%d", num) != 1)
+        return 0;
+    sprintf(buf, "%d", *num);
+    if (0 != strcmp(buf, str))
+        return 0;
+    return 1;
+}
+
+
+int main(void)
+{
+    char *args[MAX_LINE/2 + 1];
+    char userInput[MAX_LINE + 2];
+    char buf[MAX_LINE + 2];
+    int aargs = 0;
+    const int max_aargs = MAX_LINE/2 + 1;
+    pid_t pid;
+    record history[MAX_Process];
+    int last_id = NOT_Process;
+    int i;
+    int num;
+    int should_run = 1;
+
+    while (should_run) {
+        printf("CSCI3120>");
+        fflush(stdout);
+
+        if (!fgets(userInput, sizeof(userInput), stdin))
+            exit(0);
+
+        if (!(aargs = parse_userInput(userInput, buf, args, aargs, max_aargs)))
+            exit(0);
+
+        if (!strcspn(args[0], " ")) {
+            continue;
+        }
+
+        if (strcmp(args[0], "exit") == 0) {
+            if (aargs != 1) {
+                printf("Wrong Input\n");
+            } else {
+                should_run = 0;
+            }
+            continue;
+        }
+
+        if (strcmp(args[0], "history") == 0) {
+            if (aargs != 1) {
+                printf("Wrong Input\n");
+            } else if (last_id == NOT_Process) {
+                printf("No userInput in the history\n");
+            } else {
+                printf("%-5s%-9s%s\n", "ID", "PID", "userInput");
+                for (i = 0; i < last_id; i++) {
+                    printf("%-5d%-9d%s\n", i + 1, history[i].pid,
+                           history[i].userInput);
+                }
+            }
+            continue;
+        }
+
+        if (strcmp(args[0], "!!") == 0) {
+            if (aargs != 1) {
+                printf("Wrong Input\n");
+                continue;
+            } else if (last_id == NOT_Process) {
+                printf("No userInput in the history\n");
+                continue;
+            } else {
+                strcpy(userInput, history[last_id - 1].userInput);
+                aargs = parse_userInput(userInput, buf, args, aargs, max_aargs);
+            }
+        }
+
+        if (args[0][0] == '!') {
+            if (aargs != 1 || !parse_number(args[0] + 1, buf, &num)) {
+                printf("Wrong Input\n");
+                continue;
+            } else if (num < MIN_Process || num > last_id) {
+                printf("No userInput in the history\n");
+                continue;
+            } else {
+                strcpy(userInput, history[num - 1].userInput);
+                aargs = parse_userInput(userInput, buf, args, aargs, max_aargs);
+            }
+        }
+
+        pid = fork();
+        if (pid < 0)
+            exit(0);
+        if (pid == 0) {
+            if (execvp(args[0], args) == -1  ) {
+                printf("Wrong Input\n");
+                exit(0);
+            }
+        }
+        if (pid > 0) {
+            if (last_id >= MAX_Process) {
+                for (i = MIN_Process; i < MAX_Process; i++)
+                    history[i - 1] = history[i];
+                last_id = MAX_Process - 1;
+            }
+            history[last_id].pid = pid;
+            strcpy(history[last_id].userInput, userInput);
+            last_id++;
+
+        }
+    }
+    return 0;
+}
