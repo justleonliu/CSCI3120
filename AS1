@@ -1,0 +1,75 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <stddef.h>
+#include <stdlib.h>
+
+#define MAX_LINE 80
+#define NOT_ID 0
+#define MIN_ID 1
+#define MAX_ID 10
+
+typedef struct
+{
+    pid_t pid;
+    char userInput[MAX_LINE + 1];
+} record;
+
+void free_args(char **args, unsigned nargs)
+{
+    unsigned i;
+    for (i = 0; i < nargs; i++)
+        free(args[i]);
+}
+
+int parse_userInput(char *userInput, char *buf, char **args, unsigned nargs,
+                    unsigned max_nargs)
+{
+    char *token;
+    unsigned len;
+    unsigned i;
+
+    free_args(args, nargs);
+    nargs = 0;
+    for (i = 0; i < max_nargs; i++)
+        args[i] = NULL;
+
+    len = strlen(userInput);
+    if (len > 0 && userInput[len - 1] == '\n')
+        userInput[--len] = '\0';
+
+    strcpy(buf, userInput);
+    token = strtok(buf, " ");
+
+    if (!token) {
+        args[nargs] = strdup(buf);
+        return ++nargs;
+    }
+
+    while (token && nargs + 1 < max_nargs) {
+        args[nargs] = strdup(token);
+        nargs++;
+        token = strtok(NULL, " ");
+    }
+    if (token) {
+        free_args(args, nargs);
+        return 0;
+    }
+    return nargs;
+}
+
+int parse_number(const char *str, char *buf, int *num)
+{
+    if (sscanf(str, "%d", num) != 1)
+        return 0;
+    sprintf(buf, "%d", *num);
+    if (0 != strcmp(buf, str))
+        return 0;
+    return 1;
+}
+
+int my_exit(int status, char **args, int nargs)
+{
+    free_args(args, nargs);
+    exit(status);
+}
