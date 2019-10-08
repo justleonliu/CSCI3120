@@ -5,57 +5,56 @@
 #include <stdlib.h>
 
 #define MAX_LINE 80
-#define MIN_Process 1
-#define MAX_Process 10
-#define NOT_Process 0
+#define MIN_ID 1
+#define MAX_ID 10
+#define NOT_ID 0
 
 
 typedef struct
 {
     pid_t pid;
     char userInput[MAX_LINE + 1];
-} 
-    record;
+} record;
 
-void free_args(char **args, unsigned aargs)
+void free_args(char **args, unsigned nargs)
 {
     unsigned i;
-    for (i = 0; i < aargs; i++)
+    for (i = 0; i < nargs; i++)
         free(args[i]);
 }
 
-int parse_userInput(char *userInput, char *buf, char **args, unsigned aargs, unsigned max_aargs)
+int parse_userInput(char *userInput, char *buf, char **args, unsigned nargs, unsigned max_nargs)
 {
     char *token;
     unsigned len;
     unsigned i;
-    free_args(args, aargs);
-    aargs = 0;
-    for (i = 0; i < max_aargs; i++)
+    free_args(args, nargs);
+    nargs = 0;
+    for (i = 0; i < max_nargs; i++)
         args[i] = NULL;
 
     len = strlen(userInput);
     if (len > 0 && userInput[len - 1] == '\n')
         userInput[--len] = '\0';
 
-    strcpy(buf, userInput);
-    token = strtok(buf, " ");
+        strcpy(buf, userInput);
+        token = strtok(buf, " ");
 
     if (!token) {
-        args[aargs] = strdup(buf);
-        return ++aargs;
+        args[nargs] = strdup(buf);
+        return ++nargs;
     }
 
-    while (token && aargs + 1 < max_aargs) {
-        args[aargs] = strdup(token);
-        aargs++;
+    while (token && nargs + 1 < max_nargs) {
+        args[nargs] = strdup(token);
+        nargs++;
         token = strtok(NULL, " ");
     }
     if (token) {
-        free_args(args, aargs);
+        free_args(args, nargs);
         return 0;
     }
-    return aargs;
+    return nargs;
 }
 
 int parse_number(const char *str, char *buf, int *num)
@@ -74,11 +73,11 @@ int main(void)
     char *args[MAX_LINE/2 + 1];
     char userInput[MAX_LINE + 2];
     char buf[MAX_LINE + 2];
-    int aargs = 0;
-    const int max_aargs = MAX_LINE/2 + 1;
+    int nargs = 0;
+    const int max_nargs = MAX_LINE/2 + 1;
     pid_t pid;
-    record history[MAX_Process];
-    int last_id = NOT_Process;
+    record history[MAX_ID];
+    int last_id = NOT_ID;
     int i;
     int num;
     int should_run = 1;
@@ -90,15 +89,15 @@ int main(void)
         if (!fgets(userInput, sizeof(userInput), stdin))
             exit(0);
 
-        if (!(aargs = parse_userInput(userInput, buf, args, aargs, max_aargs)))
+        if (!(nargs = parse_userInput(userInput, buf, args, nargs, max_nargs)))
             exit(0);
 
         if (!strcspn(args[0], " ")) {
             continue;
         }
 
-        if (strcmp(args[0], "exit") == 0) {
-            if (aargs != 1) {
+        if (0 == strcmp(args[0], "exit")) {
+            if (nargs != 1) {
                 printf("Wrong Input\n");
             } else {
                 should_run = 0;
@@ -106,44 +105,43 @@ int main(void)
             continue;
         }
 
-        if (strcmp(args[0], "history") == 0) {
-            if (aargs != 1) {
+        if (0 == strcmp(args[0], "history")) {
+            if (nargs != 1) {
                 printf("Wrong Input\n");
-            } else if (last_id == NOT_Process) {
+            } else if (last_id == NOT_ID) {
                 printf("No userInput in the history\n");
             } else {
                 printf("%-5s%-9s%s\n", "ID", "PID", "userInput");
                 for (i = 0; i < last_id; i++) {
-                    printf("%-5d%-9d%s\n", i + 1, history[i].pid,
-                           history[i].userInput);
+                    printf("%-5d%-9d%s\n", i + 1, history[i].pid, history[i].userInput);
                 }
             }
             continue;
         }
 
-        if (strcmp(args[0], "!!") == 0) {
-            if (aargs != 1) {
+        if (0 == strcmp(args[0], "!!")) {
+            if (nargs != 1) {
                 printf("Wrong Input\n");
                 continue;
-            } else if (last_id == NOT_Process) {
+            } else if (last_id == NOT_ID) {
                 printf("No userInput in the history\n");
                 continue;
             } else {
                 strcpy(userInput, history[last_id - 1].userInput);
-                aargs = parse_userInput(userInput, buf, args, aargs, max_aargs);
+                nargs = parse_userInput(userInput, buf, args, nargs, max_nargs);
             }
         }
 
         if (args[0][0] == '!') {
-            if (aargs != 1 || !parse_number(args[0] + 1, buf, &num)) {
+            if (nargs != 1 || !parse_number(args[0] + 1, buf, &num)) {
                 printf("Wrong Input\n");
                 continue;
-            } else if (num < MIN_Process || num > last_id) {
+            } else if (num < MIN_ID || num > last_id) {
                 printf("No userInput in the history\n");
                 continue;
             } else {
                 strcpy(userInput, history[num - 1].userInput);
-                aargs = parse_userInput(userInput, buf, args, aargs, max_aargs);
+                nargs = parse_userInput(userInput, buf, args, nargs, max_nargs);
             }
         }
 
@@ -151,21 +149,21 @@ int main(void)
         if (pid < 0)
             exit(0);
         if (pid == 0) {
-            if (execvp(args[0], args) == -1  ) {
+            if (-1 == execvp(args[0], args)) {
                 printf("Wrong Input\n");
                 exit(0);
             }
         }
         if (pid > 0) {
-            if (last_id >= MAX_Process) {
-                for (i = MIN_Process; i < MAX_Process; i++)
+            if (last_id >= MAX_ID) {
+                for (i = MIN_ID; i < MAX_ID; i++)
                     history[i - 1] = history[i];
-                last_id = MAX_Process - 1;
+                    last_id = MAX_ID - 1;
             }
             history[last_id].pid = pid;
             strcpy(history[last_id].userInput, userInput);
             last_id++;
-
+            
         }
     }
     return 0;
