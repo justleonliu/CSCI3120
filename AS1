@@ -1,26 +1,25 @@
-#define _POSIX_C_SOURCE 200809L /* to support strdup() */
-#include <stdio.h> /* printf(), sscanf(), sprintf(), fflush(), stdout, fgets(),
-    stdin */
-#include <unistd.h> /* fork(), execvp() */
-#include <string.h> /* strlen(), strcpy(), strtok(), strcspn() */
-#include <stddef.h> /* NULL */
-#include <stdlib.h> /* exit(), EXIT_FAILURE, free() (bcs dup()), EXIT_SUCCESS */
-#include <sys/wait.h> /* wait() */
+#define _POSIX_C_SOURCE 200809L 
+#include <stdio.h> 
+#include <unistd.h> 
+#include <string.h> 
+#include <stddef.h> 
+#include <stdlib.h> 
+#include <sys/wait.h>
 
-#define MAX_LINE 80 /* The maximum length of a command */
-#define NOT_ID 0 /* The default ID if the history is empty */
-#define MIN_ID 1 /* The initial ID of a record in the history */
-#define MAX_ID 10 /* The maximum size of the history */
+#define MAX_LINE 80 
+#define NOT_ID 0 
+#define MIN_ID 1 
+#define MAX_ID 10 
 
 typedef struct
 {
-    pid_t pid; /* process identifier of the process that executed the command */
-    char command[MAX_LINE + 1]; /* command executed by the user */
+    pid_t pid; 
+    char command[MAX_LINE + 1]; 
 } record;
 
 void free_args(char **args, unsigned nargs)
 {
-    unsigned i; /* loop variable */
+    unsigned i;
     for (i = 0; i < nargs; i++)
         free(args[i]);
 }
@@ -28,9 +27,9 @@ void free_args(char **args, unsigned nargs)
 int parse_command(char *command, char *buf, char **args, unsigned nargs,
     unsigned max_nargs)
 {
-    char *token; /* pointer to the found token */
-    unsigned len; /* the length of the command */
-    unsigned i; /* loop variable */
+    char *token; 
+    unsigned len; 
+    unsigned i; 
 
     free_args(args, nargs);
     nargs = 0;
@@ -79,17 +78,17 @@ int my_exit(int status, char **args, int nargs)
 
 int main(void)
 {
-    char *args[MAX_LINE/2 + 1]; /* command line arguments */
-    int should_run = 1; /* flag to determine when to exit program */
-    char command[MAX_LINE + 2]; /* one for \0, another for \n */
-    char buf[MAX_LINE + 2]; /* to tokenize the command */
-    int nargs = 0; /* number of valid elements in args */
-    const int max_nargs = MAX_LINE/2 + 1; /* number of elements in args */
-    pid_t pid; /* pid of the child */
-    record history[MAX_ID]; /* history of the recently-entered commands */
-    int last_id = NOT_ID; /* the last used ID */
-    int i; /* loop variable */
-    int num; /* for the !N command */
+    char *args[MAX_LINE/2 + 1]; 
+    int should_run = 1; 
+    char command[MAX_LINE + 2]; 
+    char buf[MAX_LINE + 2]; 
+    int nargs = 0; 
+    const int max_nargs = MAX_LINE/2 + 1; 
+    pid_t pid; 
+    record history[MAX_ID]; 
+    int last_id = NOT_ID; 
+    int i; 
+    int num;
 
     while (should_run) {
         printf("CSCI3120>");
@@ -185,6 +184,5 @@ int main(void)
     }
 
     my_exit(EXIT_SUCCESS, args, nargs);
-    return 0; /* has the same effect as exit(0) or exit(EXIT_SUCCESS); this
-        line should prevent some compiler warnings */
+    return 0; 
 }
