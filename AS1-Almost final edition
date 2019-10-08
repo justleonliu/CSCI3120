@@ -5,9 +5,9 @@
 #include <stdlib.h>
 
 #define MAX_LINE 80
-#define MIN_ID 1
-#define MAX_ID 10
-#define NOT_ID 0
+#define MIN_Process 1
+#define MAX_Process 10
+#define NOT_Process 0
 
 
 typedef struct
@@ -77,8 +77,8 @@ int main(void)
     int aargs = 0;
     const int max_aargs = MAX_LINE/2 + 1;
     pid_t pid;
-    record history[MAX_ID];
-    int last_id = NOT_ID;
+    record history[MAX_Process];
+    int last_id = NOT_Process;
     int i;
     int num;
     int should_run = 1;
@@ -97,7 +97,7 @@ int main(void)
             continue;
         }
 
-        if (0 == strcmp(args[0], "exit")) {
+        if (strcmp(args[0], "exit") == 0) {
             if (aargs != 1) {
                 printf("Wrong Input\n");
             } else {
@@ -106,10 +106,10 @@ int main(void)
             continue;
         }
 
-        if (0 == strcmp(args[0], "history")) {
+        if (strcmp(args[0], "history") == 0) {
             if (aargs != 1) {
                 printf("Wrong Input\n");
-            } else if (last_id == NOT_ID) {
+            } else if (last_id == NOT_Process) {
                 printf("No userInput in the history\n");
             } else {
                 printf("%-5s%-9s%s\n", "ID", "PID", "userInput");
@@ -121,11 +121,11 @@ int main(void)
             continue;
         }
 
-        if (0 == strcmp(args[0], "!!")) {
+        if (strcmp(args[0], "!!") == 0) {
             if (aargs != 1) {
                 printf("Wrong Input\n");
                 continue;
-            } else if (last_id == NOT_ID) {
+            } else if (last_id == NOT_Process) {
                 printf("No userInput in the history\n");
                 continue;
             } else {
@@ -138,7 +138,7 @@ int main(void)
             if (aargs != 1 || !parse_number(args[0] + 1, buf, &num)) {
                 printf("Wrong Input\n");
                 continue;
-            } else if (num < MIN_ID || num > last_id) {
+            } else if (num < MIN_Process || num > last_id) {
                 printf("No userInput in the history\n");
                 continue;
             } else {
@@ -151,16 +151,16 @@ int main(void)
         if (pid < 0)
             exit(0);
         if (pid == 0) {
-            if (-1 == execvp(args[0], args)) {
+            if (execvp(args[0], args) == -1  ) {
                 printf("Wrong Input\n");
                 exit(0);
             }
         }
         if (pid > 0) {
-            if (last_id >= MAX_ID) {
-                for (i = MIN_ID; i < MAX_ID; i++)
+            if (last_id >= MAX_Process) {
+                for (i = MIN_Process; i < MAX_Process; i++)
                     history[i - 1] = history[i];
-                last_id = MAX_ID - 1;
+                last_id = MAX_Process - 1;
             }
             history[last_id].pid = pid;
             strcpy(history[last_id].userInput, userInput);
