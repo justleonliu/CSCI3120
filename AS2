@@ -1,11 +1,58 @@
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#define MAXLEN 1024
+
+void *sorter(void *params); /* thread that performs basic sorting algorithm */
+void *merger(void *params); /* thread that performs merging of results */
+
+int g_array[500];
+/* structure for passing data to threads */
+typedef struct
+{
+   int starting_index;
+   int ending_index;
+} parameters;
+
+static int cmp_int(const void *p1, const void *p2)
+{
+   return (*(int *)p1 - *(int *)p2);
+}
+
+void swap(int* a, int* b);
+void print(int* a, int size);
 
 int main() {
-    char origional_list[500];
-    FILE *fp = NULL;
-    fp = fopen("../IntegerList.txt", "r");
-    fscanf(fp, "%s", origional_list);
-    printf("%s", origional_list);
-    return 0;
-}
+   /* define thread variables */
+   pthread_t sorter_thread1, sorter_thread2, merger_thread;
+   pthread_attr_t attr;
+   const char* input_filename = "IntegerList.txt";
+   const char* output_filename = "SortedIntegerList.txt";
+   FILE *infile, *outfile;
+   char line[MAXLEN];
+   int i, j;
+   const char* tok;
+
+   infile = fopen(input_filename, "r");
+   if (infile == NULL){
+      fprintf(stderr, "Could not open file: %s", input_filename);
+      return 1;
+   }
+   outfile = fopen(output_filename, "w+");
+   if (outfile == NULL){
+      fprintf(stderr, "Could not create file: %s", output_filename);
+      return 1;
+   }
+   //reading walues from file
+   i = 0;
+   while (fgets(line, MAXLEN, infile)) {
+      for (tok = strtok(line, ",");
+            tok && *tok;
+            tok = strtok(NULL, ",\n"))
+      {
+         g_array[i++] = atoi(tok);
+      }
+   }
+   fclose(infile);
