@@ -1,3 +1,5 @@
+/*https://stackoverflow.com/questions/23531625/multithreaded-sorting-application accessed 2019/10/28*/
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +36,8 @@ int main() {
    char line[MAXLEN];
    int i, j;
    const char* tok;
-
+   
+	/* https://www.cs.swarthmore.edu/~newhall/unixhelp/C_files.html accessed 2019/10/26*/
    infile = fopen(input_filename, "r");
    if (infile == NULL){
       fprintf(stderr, "Could not open file: %s", input_filename);
@@ -61,7 +64,7 @@ int main() {
       fprintf(stderr, "pthread_attr_init error\n");
       return 1;
    }
-   /* create worker threads */
+   /* https://cboard.cprogramming.com/c-programming/159836-linux-mulithreaded-program-help-please.html accessed 2019/10/27  */
    parameters *data_first = (parameters *) malloc(sizeof(parameters)); 
    parameters *data_second = (parameters *) malloc(sizeof(parameters));
 
