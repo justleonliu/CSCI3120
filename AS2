@@ -56,3 +56,101 @@ int main() {
       }
    }
    fclose(infile);
+   /* Initialize thread creation attributes */
+   if (pthread_attr_init(&attr)) {
+      fprintf(stderr, "pthread_attr_init error\n");
+      return 1;
+   }
+   /* create worker threads */
+   parameters *data_first = (parameters *) malloc(sizeof(parameters)); 
+   parameters *data_second = (parameters *) malloc(sizeof(parameters));
+
+   data_first->starting_index= 0;
+   data_first->ending_index = i/2-1;
+    
+   data_second->starting_index= data_first->ending_index+1;
+   data_second->ending_index = i-1;
+   /* create the first sorting thread */
+   if (pthread_create(&sorter_thread1, &attr, sorter, data_first)) {
+      fprintf(stderr, "Error creating sorter thread1.\n");
+      return 1;
+   }
+   /* create the second sorting thread */
+   if (pthread_create(&sorter_thread2, &attr, sorter, data_second)) {
+      fprintf(stderr, "Error creating sorter thread2.\n");
+      return 1;
+   }
+   /* now wait for the 2 sorting threads to finish */
+   if (pthread_join(sorter_thread1, NULL)) {
+      fprintf(stderr, "Error joining sorter thread1\n");
+      return 2;
+   }
+   if (pthread_join(sorter_thread2, NULL)) {
+      fprintf(stderr, "Error joining sorter thread2\n");
+      return 2;
+   }
+   //print(g_array, i);
+   /* establish the merge thread */
+   if (pthread_create(&merger_thread, &attr, merger, data_second)) {
+      fprintf(stderr, "Error creating merger thread.\n");
+      return 1;
+   }
+   /* wait for the merge thread to finish */
+   if (pthread_join(merger_thread, NULL)) {
+      fprintf(stderr, "Error joining merger thread\n");
+      return 2;
+   }
+   /* output the sorted array */
+   for (j = 0; j < i-1; j++) {
+      fprintf(outfile, "%d,", g_array[j]);
+   }
+   fprintf(outfile, "%d", g_array[j]);
+   print(g_array, i);
+   free(data_first);
+   free(data_second);
+   return 0;
+}
+
+void *sorter(void *params) {
+   /* sorting algorithm implementation */
+   parameters *p = (parameters*)params;
+   int length = p->ending_index - p->starting_index + 1;
+   qsort((g_array + p->starting_index), length, sizeof(int), cmp_int);
+   return NULL;
+}
+
+void *merger(void *params) {
+   /* merging algorithm implementation */
+   parameters *p = (parameters*)params;
+   int i, first, k;
+   for (i = 0; i <= p->starting_index;  i++)
+	{
+		if (g_array[i] > g_array[p->starting_index])
+		{
+			swap(&g_array[i], &g_array[p->starting_index]);
+			first = g_array[p->starting_index];
+
+			for (k = p->starting_index + 1; k <= p->ending_index && g_array[k] < first; k++) {
+				g_array[k - 1] = g_array[k];
+			}
+			g_array[k - 1] = first;
+		}
+	}
+   return NULL;
+}
+
+void swap(int* a, int* b)
+{
+   int temp = *a;
+   *a = *b;
+   *b = temp; 
+}
+
+void print(int* array, int size)
+{
+   int i = 0;
+   for (i = 0; i < size; i++) {
+      printf("%d ", array[i]);
+   }
+   printf("\n");
+}
