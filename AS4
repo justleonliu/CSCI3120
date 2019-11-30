@@ -1,0 +1,66 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+    int page_table[4];
+    int logical_addresses[10];
+    int physical_addresses[10];
+    FILE *ptFile;
+    FILE *laFile;
+    FILE *paFile;
+ 
+    // Read page table 
+    ptFile = fopen("PageTable.txt", "r");
+    if (ptFile == NULL) {
+        printf("Error opening file PageTable.txt\n");
+        exit(1);
+    }
+    
+    int i;
+    int page, frame;
+    for (i=0; i<4; i++) {
+        fscanf(ptFile, "%d,%d", &page, &frame);
+        page_table[page] = frame;
+    }
+    fclose(ptFile);
+    printf("\n");
+    
+    // Read logical addresses
+    laFile = fopen("LogicalAddress.txt", "r");
+    if (laFile == NULL) {
+        printf("Error opening file LogicalAddress.txt\n");
+        exit(2);
+    }
+    int n;
+    for (i=0; i<10; i++) {
+        if (fscanf(laFile, "%d", &logical_addresses[i]) != 1)
+            break;
+    }
+    n = i;  // Save # of addresses
+    fclose(laFile);
+    
+    // Convert logical adresses to physical
+    for (i=0; i<n; i++) {
+        int logical = logical_addresses[i];
+        page = (logical & 0b1100) / 4;
+        int offset = logical & 0b0011;
+        frame = page_table[page];
+        physical_addresses[i] = frame * 4 + offset;
+       
+    }        
+    
+    // Write results
+    paFile = fopen("PhysicalAddress.txt", "w");
+    if (paFile == NULL) {
+        printf("Error opening file PhysicalAddress.txt");
+        exit(3);
+    }
+    for (i=0; i<n; i++) {
+        fprintf(paFile, "%d\n", physical_addresses[i]);
+    }
+    fclose(paFile);
+    
+    printf("All done!\n");
+    return 0;    
+}
